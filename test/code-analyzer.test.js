@@ -128,15 +128,42 @@ describe('The javascript parser', () => {
             '<table border="2"><tr><td>1</td><td>FunctionDeclaration</td><td>binarySearch</td><td> </td><td> </td></tr><tr><td>1</td><td>VariableDeclaration</td><td>X</td><td> </td><td> </td></tr><tr><td>1</td><td>VariableDeclaration</td><td>V</td><td> </td><td> </td></tr><tr><td>1</td><td>VariableDeclaration</td><td>n</td><td> </td><td> </td></tr><tr><td>2</td><td>VariableDeclaration</td><td>low</td><td> </td><td>null</td></tr><tr><td>2</td><td>VariableDeclaration</td><td>high</td><td> </td><td>null</td></tr><tr><td>2</td><td>VariableDeclaration</td><td>mid</td><td> </td><td>null</td></tr><tr><td>3</td><td>AssignmentExpression</td><td>low</td><td> </td><td>0</td></tr><tr><td>4</td><td>AssignmentExpression</td><td>high</td><td> </td><td>n-1</td></tr><tr><td>5</td><td>WhileStatement</td><td> </td><td>low < =high</td><td> </td></tr><tr><td>6</td><td>AssignmentExpression</td><td>mid</td><td> </td><td>low+high/2</td></tr><tr><td>7</td><td>IfStatement</td><td> </td><td>X < V[1+n+mid]</td><td> </td></tr><tr><td>8</td><td>AssignmentExpression</td><td>high</td><td> </td><td>mid-1</td></tr><tr><td>9</td><td>ElseIfStatement</td><td> </td><td>X>V[mid+undefined]</td><td> </td></tr><tr><td>10</td><td>AssignmentExpression</td><td>low</td><td> </td><td>mid+1</td></tr><tr><td>12</td><td>ReturnStatement</td><td> </td><td> </td><td>mid</td></tr><tr><td>14</td><td>ReturnStatement</td><td> </td><td> </td><td>-1</td></tr></table>'
         );
     });
-    it('if else if', () => {
+    it('for', () => {
         assert.equal(
-            getAllParsedCode(parseCode('if(x>2){\n' +
-                'let x=5;\n' +
+            getAllParsedCode(parseCode('function y(){\n' +
+                '   for(x=1;x<2;x++){\n' +
+                '   x=2;\n' +
+                '   let z=2+n;\n' +
+                '   while(x<6){\n' +
+                '  \n' +
+                '\n' +
+                '   }\n' +
+                '   if(x>3){\n' +
+                '   }\n' +
+                '   else if(x<3){\n' +
+                '   }\n' +
+                '   return 5;\n' +
+                '\n' +
                 '}\n' +
-                'else if(12>x){\n' +
-                'let y=5+2;\n' +
+                '   \n' +
+                '\n' +
+                '\n' +
                 '}')),
-            '<table border="2"><tr><td>1</td><td>IfStatement</td><td> </td><td>x>2</td><td> </td></tr><tr><td>2</td><td>VariableDeclaration</td><td>x</td><td> </td><td>5</td></tr><tr><td>4</td><td>ElseIfStatement</td><td> </td><td>12>x</td><td> </td></tr></table>'
+            '<table border="2"><tr><td>1</td><td>FunctionDeclaration</td><td>y</td><td> </td><td> </td></tr><tr><td>2</td><td>ForStatement</td><td> </td><td>x < 2</td><td> </td></tr><tr><td>3</td><td>AssignmentExpression</td><td>x</td><td> </td><td>2</td></tr><tr><td>4</td><td>VariableDeclaration</td><td>z</td><td> </td><td>2+n</td></tr><tr><td>13</td><td>ReturnStatement</td><td> </td><td> </td><td>5</td></tr><tr><td>5</td><td>WhileStatement</td><td> </td><td>x < 6</td><td> </td></tr><tr><td>9</td><td>IfStatement</td><td> </td><td>x>3</td><td> </td></tr><tr><td>11</td><td>ElseIfStatement</td><td> </td><td>x < 3</td><td> </td></tr></table>'
+        );
+    });
+    it('ddd', () => {
+        assert.equal(
+            getAllParsedCode(parseCode('function y(){\n' +
+                '   if(1<x[(1+1)+2]){\n' +
+                '    let z=5;\n' +
+                '    while(5>n){\n' +
+                '}\n' +
+                '   }\n' +
+                '   let x=-1;\n' +
+                '   let y=x;\n' +
+                '}')),
+            '<table border="2"><tr><td>1</td><td>FunctionDeclaration</td><td>y</td><td> </td><td> </td></tr><tr><td>2</td><td>IfStatement</td><td> </td><td>1 < x[1+1+2]</td><td> </td></tr><tr><td>3</td><td>VariableDeclaration</td><td>z</td><td> </td><td>5</td></tr><tr><td>4</td><td>WhileStatement</td><td> </td><td>5>n</td><td> </td></tr><tr><td>7</td><td>VariableDeclaration</td><td>x</td><td> </td><td>-1</td></tr><tr><td>8</td><td>VariableDeclaration</td><td>y</td><td> </td><td>x</td></tr></table>'
         );
     });
 });
