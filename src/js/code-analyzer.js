@@ -23,6 +23,12 @@ function getAllParsedCode(parsedCode) {
 
 function buildTable() {
     var str='<table border="2">';
+    str=str+'<tr>';
+    str=str+'<td>'+'Line'+'</td>';
+    str=str+'<td>'+'Type'+'</td>';
+    str=str+'<td>'+'Name'+'</td>';
+    str=str+'<td>'+'Condition'+'</td>';
+    str=str+'<td>'+'Value'+'</td></tr>';
     for (let i = 0; i <lines.length ; i++) {
         str=str+'<tr>';
         str=str+'<td>'+lines[i]+'</td>';
