@@ -1,12 +1,16 @@
 import * as esprima from 'esprima';
 
 let lines=[];let types=[];let names=[];let conds=[];let values=[];let stackOp=[];let other=[];let expBuild='';
-
+let some='';
 const parseCode = (codeToParse) => {
-    return esprima.parseScript(codeToParse,{loc:true});
+    some=codeToParse;
+    return esprima.parseScript(codeToParse, {loc: true});
 };
 
+
+
 function getAllParsedCode(parsedCode) {
+    some=some.split('\n');
     lines=[];types=[];names=[];conds=[];values=[];stackOp=[];other=[];expBuild='';
     if(parsedCode.body[0]==null){true;}
     else if(parsedCode.body[0].type=='FunctionDeclaration') {
@@ -91,7 +95,6 @@ function ifEXP(exp) {
     names.push(' ');
     let str=binaryEXP(exp.test);
     conds.push(str);
-    expBuild='';
     values.push(' ');
     if(exp.consequent.body==null){
         route(exp.consequent);
@@ -99,8 +102,11 @@ function ifEXP(exp) {
     else{
         allOthers(exp.consequent.body);
     }
-    if(exp.alternate!=null){
-        elseIfEXP(exp.alternate);
+    if(exp.alternate!=undefined){
+        if(exp.alternate.type=='IfStatement')
+            elseIfEXP(exp.alternate);
+        else
+            retEXP(exp.alternate);
     }
 }
 
@@ -113,9 +119,7 @@ function elseIfEXP(exp) {
     names.push(' ');
     types.push('ElseIfStatement');
     route(exp.consequent);
-    if(exp.alternate!=null) {
-        route(exp.alternate);
-    }
+    route(exp.alternate);
 }
 
 function retEXP(exp) {
@@ -123,20 +127,7 @@ function retEXP(exp) {
     types.push(exp.type);
     names.push(' ');
     conds.push(' ');
-    if(exp.argument.type=='Literal'){
-        values.push(exp.argument.value);
-    }
-    else if(exp.argument.type=='Identifier'){
-        values.push(exp.argument.name);
-    }
-    else if(exp.argument.type=='BinaryExpression'){
-        let str=binaryEXP(exp.argument);
-        values.push(str);
-        expBuild='';
-    }
-    else {
-        unaryEXP(exp.argument);
-    }
+    values.push(some[exp.argument.loc.start.line-1].substring(exp.argument.loc.start.column,exp.argument.loc.end.column));
 }
 
 
@@ -165,20 +156,21 @@ function routeWhileIf(exp) {
 }
 
 function route(exp) {
-    if(exp.type=='ExpressionStatement'){
+    if(exp.type=='BlockStatement'){
+        allOthers(exp.body);
+    }
+    else if(exp.type=='ExpressionStatement'){
         expState(exp.expression);
     }
-    else {
-        //if,while,return exp
-        otherExpRoute(exp);
+    else if(exp.type=='IfStatement'){
+        ifEXP(exp);
     }
-}
-
-function otherExpRoute(exp) {
-    if(exp.type=='ReturnStatement'){
+    else{
         retEXP(exp);
     }
 }
+
+
 
 function varDec(dec) {
     for (let j = 0; j <dec.length ; j++) {
@@ -233,32 +225,11 @@ function expState(exp) {
     types.push(exp.type);
     names.push(exp.left.name);
     conds.push(' ');
-    if(exp.right.type=='Literal'){
-        values.push(exp.right.value);
-    }
-    else{
-        let temp=exp.right;
-        let str =binaryEXP(temp);
-        values.push(str);
-        expBuild='';
-
-    }
+    values.push(some[exp.right.loc.start.line-1].substring(exp.right.loc.start.column,exp.right.loc.end.column));
 }
 
 function binaryEXP(temp) {
-    var flag=false;
-    while(temp.left.type=='BinaryExpression'){
-        stackOp.push(temp.operator);
-        other.push(temp.right.value);
-        temp = temp.left;
-        flag=true;
-    }
-    stackOp.push(temp.operator);
-    literalOrId(temp);
-    let str=buildEXP(flag);
-    stackOp=[];
-    other=[];
-    return str;
+    return some[temp.loc.start.line-1].substring(temp.loc.start.column,temp.loc.end.column);
 }
 
 function unaryEXP(exp) {
@@ -271,93 +242,16 @@ function unaryEXP(exp) {
         str+=exp.argument.value;
     }
     else {
-        str=binaryEXP(exp.argument);
-        expBuild='';
+        str=binaryEXP(exp);
     }
     values.push(str);
 }
 
-//help functions to binaryEXP
-function literalOrId(temp) {
-    if(temp.right.type=='Literal'){
-        other.push(temp.right.value);
-    }
-    else if(temp.right.type=='Identifier'){
-        other.push(temp.right.name);
-    }
-    checkMembership(temp.right);
-    if(temp.left.type=='Literal'){
-        other.push(temp.left.value);
-    }
-    else if(temp.left.type=='Identifier'){
-        other.push(temp.left.name);
-    }
-    checkMembership(temp.left);
-}
-function buildEXP(flag) {
-    let str='';
-    if(!flag) {
-        for (let j = 0; j <= other.length + 1; j++) {
-            str = str+other.pop();
-            if (stackOp.length > 0) {
-                str = str+stackOp.pop()  ;
-            }
-        }
-    }
-    else{
-        str=reverse(stackOp,other);
-    }
-    return str;
-}
 
 
 
-function reverse(stackOp,other) {
-    var str='';
-    for (let j = 0; j <= other.length + 1; j++) {
-        str =str+ other.pop();
-        if (stackOp.length > 0) {
-            str =str+stackOp.pop();
-        }
-    }
-    return str;
-}
-function checkMembership(temp) {
-    if(temp.type=='MemberExpression'){
-        if(temp.property.type=='Literal'){
-            other.push(temp.object.name+'['+temp.property.value+']');
-        }
-        else if(temp.property.type=='Identifier'){
-            other.push(temp.object.name+'['+temp.property.name+']');
-        }
-        else {
-            var str=binaryNested(temp.property);
-            stackOp.push(str[str.length-1]);
-            other.push(temp.object.name+'['+str.substring(0,str.length-1)+']');
-        }
-    }
-}
 
-function binaryNested(temp) {
-    var flag=false;
-    while(temp.left.type=='BinaryExpression'){
-        stackOp.push(temp.operator);
-        if(temp.right.type=='Literal'){
-            other.push(temp.right.value);
-        }
-        else {
-            other.push(temp.right.name);
-        }
-        temp=temp.left;
-        flag=true;}
-    stackOp.push(temp.operator);
-    literalOrId(temp);
-    let str=buildEXP(flag);
-    stackOp=[];
-    other=[];
 
-    return str;
-}
 
 function  forStatement(stat) {
     types.push('ForStatement');
